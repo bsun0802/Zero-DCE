@@ -4,6 +4,8 @@ Link to the paper: [Zero-Reference Deep Curve Estimation for Low-Light Image Enh
 
 
 
+
+
 ### Download SICE dataset [here](https://github.com/csjcai/SICE) 
 
 prepare dataset with `code/dataset.py`(you need to modify the path in the source file) or prepare the dataset yourself.
@@ -29,7 +31,7 @@ part1-256
 
 
 
-#### Usage:
+#### Usage(Python>=3.6 is required as I used f-strings):
 
 The hyper-parameters used are configured in a dictionary named `hp`in `train.py`.
 
@@ -47,6 +49,12 @@ Visualization and sanity checks can be found in `Demo.ipynb`
 
 
 #### File Structure
+
+I reference to paths use relative path, so upon root directory, you need to create
+
+*  a `code/` directory and put python files in it
+* a `data/` directory and put subdirectory and data in it, considering modify `dataset.py` to your needs
+* empty directories `train-jobs/log`,  `train-jobs/ckpt`, `train-jobs/evaluation` as log/checkpoing/results will be saved to them
 
 ![image-20200503001251677](docs/file-structure.png)
 

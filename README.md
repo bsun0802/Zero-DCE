@@ -31,7 +31,7 @@ part1-256
 
 
 
-#### Usage(Python>=3.6 is required as I used f-strings):
+### Usage(Python>=3.6 is required as I used f-strings):
 
 The hyper-parameters used are configured in a dictionary named `hp`in `train.py`.
 
@@ -48,7 +48,7 @@ Visualization and sanity checks can be found in `Demo.ipynb`
 
 
 
-#### File Structure
+### File Structure
 
 I reference to paths use relative path, so upon root directory, you need to create
 

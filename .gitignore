@@ -1,0 +1,8 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+code/tmp.py
+**/*.zip
+**/*.npz
+**/*.JPG
+**/*.pth

@@ -9,6 +9,8 @@ def conv3x3(inplane, outplane, stride=1, groups=1, dilation=1):
 
 
 class DCENet(nn.Module):
+    '''https://li-chongyi.github.io/Proj_Zero-DCE.html'''
+
     def __init__(self, n_LE=8, std=0.02):
         super().__init__()
         self.n_LE = n_LE  # number of iterations of enhancement

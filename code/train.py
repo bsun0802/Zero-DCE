@@ -125,10 +125,10 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
     return val_loss
 
-hp = dict(lr=5e-4, wd=0.0, lr_decay_factor=0.9,
-          n_LE=8, std=0.05, 
-          w_exp=5, w_col=0.5, w_tvA=1,
-          spa_rsize=4, exp_rsize=8)  # exp_rsize = 8 for 256x256, 16 for 512x512
+hp = dict(lr=0.001, wd=2e-5, lr_decay_factor=0.9,
+          n_LE=4, std=0.05, 
+          w_exp=8, w_col=0.5, w_tvA=1,
+          spa_rsize=4, exp_rsize=8)
 
 model = DCENet(n_LE=hp['n_LE'], std=hp['std'])
 model.to(device)
@@ -144,8 +144,9 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=args.
 experiment = args.experiment
 
 ckpt_dir = '../train-jobs/ckpt'
-dump_dir = os.path.join('../train-jobs/log', experiment)
-os.makedirs(dump_dir, exist_ok=True)
+# for saving DEBUG outputs
+# dump_dir = os.path.join('../train-jobs/log', experiment)
+# os.makedirs(dump_dir, exist_ok=True)
 
 logfile = open(os.path.join('../train-jobs/log', args.experiment + '.log'), 'w')
 sys.stdout = logfile

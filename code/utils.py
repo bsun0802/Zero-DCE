@@ -1,6 +1,8 @@
 import os
 import shutil
+import sys
 from datetime import datetime
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -21,6 +23,10 @@ def refine_image(img, Astack):
 
 
 def alpha_total_variation(A):
+    '''
+    Links: https://remi.flamary.com/demos/proxtv.html
+           https://kornia.readthedocs.io/en/latest/_modules/kornia/losses/total_variation.html#total_variation
+    '''
     delta_h = A[:, :, 1:, :] - A[:, :, :-1, :]
     delta_w = A[:, :, :, 1:] - A[:, :, :, :-1]
 
@@ -169,3 +175,13 @@ def plot_staff(img, enhanced, Astack, n_LE, scaler=None):
         axes[i].axis('off')
     fig.tight_layout()
     return fig
+
+
+# system path
+def create_dir(path: str) -> Path:
+    p = Path(path).expanduser().resolve()
+    if p.exists() and not p.is_dir():
+        sys.exit('[ERROR] You specified a file, not a folder. Please revise --output-dir')
+    if not p.exists():
+        p.mkdir(parents=True)
+    return p

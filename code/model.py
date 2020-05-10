@@ -29,15 +29,8 @@ class DCENet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                # the paper said to use std=0.02, which initialize A to be near 0
-                # nn.init.normal_(m.weight, mean=0, std=std)
-                # maybe SOAT results require tuning of this std param, but in this demo
-                # I went with kaiming normal
-
-                # I thinkg a larger std or kaiming normal to be more resonable if the algoirhtm
-                # is going to converge and find a solution.
-                # this will initialize A more spread in range [-1, 1]
-                nn.init.kaiming_normal_(m.weight)
+                nn.init.normal_(m.weight, mean=0, std=std)
+                # nn.init.kaiming_normal_(m.weight)
                 if m.bias is not None:
                     m.bias.data.zero_()
 

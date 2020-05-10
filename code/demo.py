@@ -3,7 +3,8 @@ import argparse
 from pathlib import Path
 
 from PIL import Image
-# import numpy as np
+import numpy as np
+import cv2
 import matplotlib.pyplot as plt
 
 import torch
@@ -51,6 +52,8 @@ to_gray, neigh_diff = get_kernels(device)  # conv kernels for calculating spatia
 test_dataset = SICEPart1(args.testDir, transform=transforms.ToTensor())
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
+grid, vsep = make_grid(test_dataset)
+curr_h = 0
 with torch.no_grad():
     for i, sample in enumerate(test_loader):
         name = sample['name'][0][:-4]
@@ -61,15 +64,31 @@ with torch.no_grad():
         img = to_numpy(img_batch, squeeze=True)
         enhanced = to_numpy(enhanced_batch, squeeze=True)
 
-        fig, axes = plt.subplots(1, 2)
-        axes[0].imshow(img)
-        axes[1].imshow(enhanced)
-        axes[0].axis('off')
-        axes[1].axis('off')
+        # < Snippet: Comparison>
+        fixed_gamma = gamma_correction(img, 0.4)
+        adaptive_gamma = gamma_like(img, enhanced)
 
-        fig.savefig(outPath.joinpath(name + '_img_enh.pdf'))
+        row = row_arrange(img, fixed_gamma, adaptive_gamma, enhanced)
+        Image.fromarray((row*255).astype(np.uint8), mode='RGB').save(outPath.joinpath(f'{name}.png'))
+        h, _, _ = row.shape
+        grid[curr_h:curr_h + h, :, :] = row
 
-        img_jpg = Image.fromarray((img * 255.).astype(np.uint8), mode='RGB')
-        enh_jpg = Image.fromarray((enhanced * 255.).astype(np.uint8), mode='RGB')
-        img_jpg.save(outPath.joinpath(name + '_original.jpg'))
-        enh_jpg.save(outPath.joinpath(name + '_enhanved.jpg'))
+        curr_h += (h + vsep)
+
+grid_image = Image.fromarray((grid * 255).astype(np.uint8), mode='RGB')
+grid_image.save(outPath.joinpath('ZeroDCE_demo_output.pdf'))
+
+# <-- Old Snippet, ident 2 times to the right -->
+# fig, axes = plt.subplots(1, 2)
+# axes[0].imshow(img)
+# axes[1].imshow(enhanced)
+# axes[0].axis('off')
+# axes[1].axis('off')
+
+# fig.savefig(outPath.joinpath(name + '_img_enh.pdf'))
+
+# img_jpg = Image.fromarray((img * 255.).astype(np.uint8), mode='RGB')
+# enh_jpg = Image.fromarray((enhanced * 255.).astype(np.uint8), mode='RGB')
+# img_jpg.save(outPath.joinpath(name + '_original.jpg'))
+# enh_jpg.save(outPath.joinpath(name + '_enhanved.jpg'))
+# <-- END Old Snippet -->

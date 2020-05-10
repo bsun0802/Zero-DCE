@@ -38,6 +38,7 @@ else:
 
 checkpoint = torch.load(args.ckpt, map_location=device)
 hp = checkpoint['HyperParam']
+print(hp)
 model = DCENet(n_LE=hp['n_LE'], std=hp['std'])
 model.load_state_dict(checkpoint['model'])
 model.to(device)
@@ -57,7 +58,7 @@ with torch.no_grad():
         img_batch = sample['img'].to(device)
 
         Astack = model(img_batch)
-        enhanced_batch = refine_image(img_batch, Astack)
+        enhanced_batch, cache = refine_image(img_batch, Astack, eval=True)
 
         img = to_numpy(img_batch, squeeze=True)
         enhanced = to_numpy(enhanced_batch, squeeze=True)
@@ -66,5 +67,14 @@ with torch.no_grad():
         np.savez_compressed(os.path.join(output_dir, name),
                             original=img, enhanced=enhanced, Astack=Astack)
 
-        fig = plot_staff(img, enhanced, Astack, hp['n_LE'], standardize)
+        fig = plot_LE(cache)
+        fig.savefig(os.path.join(output_dir, 'LE_' + name + '.jpg'), dpi=300)
+        plt.close(fig)
+
+        fig = plot_result(img, enhanced, Astack, hp['n_LE'], scaler=None)
         fig.savefig(os.path.join(output_dir, 'res_' + name + '.jpg'), dpi=300)
+        plt.close(fig)
+
+        fig = plot_alpha_hist(Astack)
+        fig.savefig(os.path.join(output_dir, 'A_' + name + '.jpg'), dpi=150)
+        plt.close(fig)

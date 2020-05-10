@@ -16,10 +16,14 @@ from model import *
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=int, required=True, help='device name, cuda:0')
-    parser.add_argument('--experiment', required=True, help='experiment_best_model.pth')
-    parser.add_argument('--baseDir', type=str, required=True, 
+    parser.add_argument('--experiment', required=True,
+                        help='prefix of outputs, e.g., experiment_best_model.pth will be saved to ckpt/')
+    parser.add_argument('--baseDir', type=str, required=True,
                         help='baseDir/train, baseDir/val will be used')
-    
+    parser.add_argument('--n_LE', type=int, required=True, help='number of LE iteration')
+    parser.add_argument('--weights', type=float, nargs='+', required=True
+                        help='A list of weights for [w_spa, w_exp, w_col, w_tvA]')
+
     parser.add_argument('--numEpoch', type=int, default=120)
     args = parser.parse_args()
     return args
@@ -41,23 +45,23 @@ train_dir = os.path.join(basedir, 'train')
 val_dir = os.path.join(basedir, 'val')
 
 train_dataset = SICEPart1(train_dir, transform=transforms.ToTensor())
-trainloader = DataLoader(train_dataset, batch_size=8, shuffle=True, pin_memory=True)
+trainloader = DataLoader(train_dataset, batch_size=12, shuffle=True, pin_memory=True)
 val_dataset = SICEPart1(val_dir, transform=transforms.ToTensor())
-valloader = DataLoader(val_dataset, batch_size=8, shuffle=False, pin_memory=True)
+valloader = DataLoader(val_dataset, batch_size=12, shuffle=False, pin_memory=True)
 
 loaders = {'train': trainloader, 'val': valloader}
 
 
 def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
-    w_exp, w_col, w_tvA = kwargs['w_exp'], kwargs['w_col'], kwargs['w_tvA']
+    w_spa, w_exp, w_col, w_tvA = kwargs['w_spa'], kwargs['w_exp'], kwargs['w_col'], kwargs['w_tvA']
     to_gray, neigh_diff = kwargs['to_gray'], kwargs['neigh_diff']
     spa_rsize, exp_rsize = kwargs['spa_rsize'], kwargs['exp_rsize']
 
     model = model.train()
     print(f'--- Epoch {epoch}, LR = {[group["lr"] for group in optimizer.param_groups]} ---')
-    
+
     logger = Logger(n=5)
-    
+
     total_i = len(loaders['train'])
     prev = time.time()
     for i, sample in enumerate(loaders['train']):
@@ -65,13 +69,11 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
         img_batch = sample['img'].to(device)
         Astack = model(img_batch)  # [B, 3*n_LE, H, W], A ranges in [-1, 1] because of tanh
-        # for DEBUG 
-        # np.save(f'Astack_{epoch}_{i}', Astack.detach().cpu().numpy())
-        # print(Astack.min(), Astack.max())
 
         enhanced_batch = refine_image(img_batch, Astack)
 
-        L_spa = spatial_consistency_loss(enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
+        L_spa = w_spa * spatial_consistency_loss(
+            enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
         L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
         L_col = w_col * color_constency_loss(enhanced_batch)
         L_tvA = w_tvA * alpha_total_variation(Astack)
@@ -83,20 +85,15 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
         optimizer.step()
 
-        gstep = epoch * len(loaders['train']) + i + 1
-
-        # for DEBUG: tracking changes of A
-        # if gstep % 200 == 0:
-        #     np.save(os.path.join(dump_dir, f'Astack_{epoch}_{i}'), Astack.detach().cpu().numpy())
-
         timeElapsed = (time.time() - prev)
         print(logger.TRAIN_INFO.format(
-                epoch + 1, num_epochs, i + 1, total_i, timeElapsed,
-                logger.val[-1], logger.avg[-1],
-                ', '.join([f'{logger.val[0] * 100:.4f}(100x)'] +  # L_spa displayed in 100x
-                          ['{:.4f}'.format(l) for l in logger.val[1:-1]]),
-                ', '.join([f'{logger.avg[0] * 100:.4f}(100x)'] + # avg. L_spa displayed in 100x
-                          ['{:.4f}'.format(l) for l in logger.avg[1:-1]])), flush=True)
+            epoch + 1, num_epochs, i + 1, total_i, timeElapsed,
+            logger.val[-1], logger.avg[-1],
+            ', '.join([f'{logger.val[0] * 100:.4f}(100x)']  # L_spa displayed in 100x
+                      + ['{:.4f}'.format(l) for l in logger.val[1:-1]]),
+            ', '.join([f'{logger.avg[0] * 100:.4f}(100x)']  # avg. L_spa displayed in 100x
+                      + ['{:.4f}'.format(l) for l in logger.avg[1:-1]])), flush=True)
+
         prev = time.time()
 
     model = model.eval()
@@ -108,7 +105,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
             enhanced_batch = refine_image(img_batch, Astack)
 
-            L_spa = spatial_consistency_loss(
+            L_spa = w_spa * spatial_consistency_loss(
                 enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
             L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
             L_col = w_col * color_constency_loss(enhanced_batch)
@@ -125,10 +122,12 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
     return val_loss
 
-hp = dict(lr=0.001, wd=2e-5, lr_decay_factor=0.9,
-          n_LE=4, std=0.05, 
-          w_exp=8, w_col=0.5, w_tvA=1,
-          spa_rsize=4, exp_rsize=8)
+
+w_spa, w_exp, w_col, w_tvA = args.weights
+hp = dict(lr=1e-4, wd=0.0, lr_decay_factor=0.98,
+          n_LE=args.n_LE, std=0.04,
+          w_spa=w_spa, w_exp=w_exp, w_col=w_col, w_tvA=w_tvA,
+          spa_rsize=4, exp_rsize=16)
 
 model = DCENet(n_LE=hp['n_LE'], std=hp['std'])
 model.to(device)
@@ -139,14 +138,12 @@ grouped_params = group_params(model)  # group params into decay(weight) and no_d
 
 optimizer = optim.Adam(grouped_params, lr=hp['lr'], weight_decay=hp['wd'])
 
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=args.numEpoch // 10, mode='min', factor=hp['lr_decay_factor'], threshold=3e-4)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, patience=args.numEpoch // 10, mode='min', factor=hp['lr_decay_factor'], threshold=3e-4)
 
 experiment = args.experiment
 
 ckpt_dir = '../train-jobs/ckpt'
-# for saving DEBUG outputs
-# dump_dir = os.path.join('../train-jobs/log', experiment)
-# os.makedirs(dump_dir, exist_ok=True)
 
 logfile = open(os.path.join('../train-jobs/log', args.experiment + '.log'), 'w')
 sys.stdout = logfile
@@ -157,7 +154,7 @@ print(f'[START TRAINING JOB] -{experiment} on {datetime.now().strftime("%b %d %Y
 for epoch in range(num_epochs):
     val_loss = train(loaders, model, optimizer, scheduler, epoch, num_epochs,
                      to_gray=to_gray, neigh_diff=neigh_diff,
-                     w_exp=hp['w_exp'], w_col=hp['w_col'], w_tvA=hp['w_tvA'],
+                     w_spa=hp['w_spa'], w_exp=hp['w_exp'], w_col=hp['w_col'], w_tvA=hp['w_tvA'],
                      spa_rsize=hp['spa_rsize'], exp_rsize=hp['exp_rsize'])
     loss_history.append(val_loss)
     is_best = val_loss < best_loss
@@ -169,7 +166,9 @@ for epoch in range(num_epochs):
         'optimizer': optimizer.state_dict(),
         'HyperParam': hp,
         'val_loss': val_loss,
-        'loss_history': loss_history
+        'loss_history': loss_history,
+        'model_src': open('./model.py', 'rt').read(),
+        'train_src': open('./train.py', 'rt').read()
     }, is_best, experiment, epoch, ckpt_dir)
 
 logfile.close()

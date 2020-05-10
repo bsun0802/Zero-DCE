@@ -32,7 +32,8 @@ def train_val_split(part1_rootdir, dst_dir, splitAt=2421, resized=(512, 512)):
 class SICEPart1(Dataset):
     def __init__(self, img_dir, transform=None):
         self.root_dir = img_dir
-        self.images = [im_name for im_name in os.listdir(img_dir) if 'JPG' in im_name]
+        self.images = [im_name for im_name in os.listdir(img_dir)
+                       if im_name.split('.')[-1].lower() in ('jpg', 'png')]
         self.transform = transform
 
     def __len__(self):

@@ -37,17 +37,20 @@ part1-256
 # go to the code directory
 cd code/
 
-# device=-1 means CPU, specify device=0 to use cuda:0 (I haven't tested GPU yet)
 python demo.py --device=-1 --testDir=../data/part1-512/test-toy \
-               --ckpt=../train-jobs/ckpt/512-10Wexp-1_ckpt.pth \
+               --ckpt=../train-jobs/ckpt/8LE-3_best_model.pth \
                --output-dir=../demo-output
 ```
 
-In this example, you will find the original image, enhanced images, and those two displayed side by side in `../demo-output`. 
+This will process the images in ``../data/part1-512/test-toy ` and save results to  `../demo-output`. Results including output from ZeroDCE, and simple gamma corrections.  
 
 
 
 ### Usage(Python>=3.6 is required as I used f-strings):
+
+I use relative path throughout my code, so please follow the exact directories structure as shown the [next section](#file-structure).
+
+The arguments are explained in `--help`, e.g., to get help for train.py, run `python train.py --help`.
 
 **The hyper-parameters used are configured in a dictionary named `hp`in `train.py`.**
 
@@ -55,12 +58,13 @@ In this example, you will find the original image, enhanced images, and those tw
 # go to the code directory
 cd code/
 
-# 256 here means image size
-nohup python train.py --device=1 --experiment='256-5xWexp-1' \
-    --baseDir=../data/part1-256 --numEpoch=300 >256.log 2>&1 &
+# 512 here means image size, train/val loss will be saved to ../train-jobs/log
+nohup python train.py --device=0 --baseDir=../data/part1-512 \
+  --experiment=8LE --n_LE=8 --numEpoch=150 \
+  --weights 2 4 2 5 &
 
-python eval.py --device=0 --testDir=../data/part1-256/test-toy \
-  --ckpt=../train-jobs/ckpt/256-5xWexp-1_best_model.pth 
+python eval.py --device=0 --testDir=../data/part1-512/test-toy \
+  --ckpt=../train-jobs/ckpt/8LE-3_best_model.pth
 ```
 
 Visualization and sanity checks can be found in `Demo.ipynb`

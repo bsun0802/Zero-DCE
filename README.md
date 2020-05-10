@@ -52,7 +52,7 @@ I use relative path throughout my code, so please follow the exact directories s
 
 The arguments are explained in `--help`, e.g., to get help for train.py, run `python train.py --help`.
 
-**The hyper-parameters used are configured in a dictionary named `hp`in `train.py`.**
+**You can configure hyper-parameters used by a dictionary named `hp`in `train.py`.**
 
 ```bash
 # go to the code directory

@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument('--baseDir', type=str, required=True,
                         help='baseDir/train, baseDir/val will be used')
     parser.add_argument('--n_LE', type=int, required=True, help='number of LE iteration')
-    parser.add_argument('--weights', type=float, nargs='+', required=True
+    parser.add_argument('--weights', type=float, nargs='+', required=True,
                         help='A list of weights for [w_spa, w_exp, w_col, w_tvA]')
 
     parser.add_argument('--numEpoch', type=int, default=120)
@@ -75,7 +75,8 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
         L_spa = w_spa * spatial_consistency_loss(
             enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
         L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
-        L_col = w_col * color_constency_loss(enhanced_batch)
+        # L_col = w_col * color_constency_loss(enhanced_batch)
+        L_col = w_col * color_constency_loss2(enhanced_batch, img_batch)
         L_tvA = w_tvA * alpha_total_variation(Astack)
         loss = L_spa + L_exp + L_col + L_tvA
 
@@ -108,7 +109,8 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
             L_spa = w_spa * spatial_consistency_loss(
                 enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
             L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
-            L_col = w_col * color_constency_loss(enhanced_batch)
+            # L_col = w_col * color_constency_loss(enhanced_batch)
+            L_col = w_col * color_constency_loss2(enhanced_batch, img_batch)
             L_tvA = w_tvA * alpha_total_variation(Astack)
             loss = L_spa + L_exp + L_col + L_tvA
 

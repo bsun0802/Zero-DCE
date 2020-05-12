@@ -63,6 +63,16 @@ def color_constency_loss(enhances):
     return col_loss
 
 
+def color_constency_loss2(enhances, originals):
+    enh_cols = enhances.mean((2, 3))
+    ori_cols = originals.mean((2, 3))
+    rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
+    gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
+    br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
+    col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
+    return col_loss
+
+
 def get_kernels(device):
     # weighted RGB to gray
     # K1 = torch.tensor([0.3, 0.59, 0.1], dtype=torch.float32).view(1, 3, 1, 1).to(device)
@@ -251,7 +261,7 @@ def make_grid(dataset, vsep=8):
     n = len(dataset)
     img = to_numpy(dataset[0]['img'])
     h, w, _ = img.shape
-    grid = np.ones((n * h + vsep * (h - 1), 4 * w, 3), dtype=np.float32)
+    grid = np.ones((n * h + vsep * (n - 1), 4 * w, 3), dtype=np.float32)
     return grid, vsep
 
 

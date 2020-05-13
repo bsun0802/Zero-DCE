@@ -55,14 +55,16 @@ def exposure_control_loss(enhances, rsize=16, E=0.6):
     return exp_loss
 
 
-def color_constency_loss(enhances):
-    plane_avg = enhances.mean((2, 3))
-    col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
-                          + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
-                          + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
-    return col_loss
+# color constancy loss described in the paper, but it barely works.
+# def color_constency_loss(enhances):
+#     plane_avg = enhances.mean((2, 3))
+#     col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
+#                           + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
+#                           + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
+#     return col_loss
 
 
+# I devised a new color constancy loss
 def color_constency_loss2(enhances, originals):
     enh_cols = enhances.mean((2, 3))
     ori_cols = originals.mean((2, 3))

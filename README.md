@@ -81,3 +81,23 @@ You need to follow this directory structure as I use **relative** paths. Upon ro
 
 ![image-20200503001251677](docs/file-structure.png)
 
+
+
+### Results
+
+Please refer to `ZeroDCE_demo_output.pdf ` and `demo-output/` for more results.
+
+![res_347_3](docs/res_347_3.jpg)
+
+![res_333_3](docs/res_333_3.jpg)
+
+![res_134_1](docs/res_134_1.jpg)
+
+![res_124_3](docs/res_124_3.jpg)
+
+![res_111_1](docs/res_111_1.jpg)
+
+![res_106_1](docs/res_106_1.jpg)
+
+![res_44_25](docs/res_44_25.jpg)
+

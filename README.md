@@ -1,4 +1,4 @@
-# Reproduce ZeroDCE
+# Pytorch implementation of ZeroDCE
 
 Link to the paper: [Zero-Reference Deep Curve Estimation for Low-Light Image Enhancement](https://arxiv.org/abs/2001.06826)
 

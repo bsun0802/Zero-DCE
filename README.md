@@ -111,3 +111,9 @@ You need to follow this directory structure as I use **relative** paths. Upon ro
 
 
 
+## License
+
+This project is licensed under the MIT License.
+
+[MIT](./LICENSE) &copy; bsun
+

@@ -64,21 +64,32 @@ def exposure_control_loss(enhances, rsize=16, E=0.6):
 #     return col_loss
 
 
-# I devised a new color constancy loss
-def color_constency_loss2(enhances, originals):
-    enh_cols = enhances.mean((2, 3))
-    ori_cols = originals.mean((2, 3))
-    rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
-    gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
-    br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
+# color constancy via ratio, not difference. It works better.
+# def color_constency_loss2(enhances, originals):
+#     enh_cols = enhances.mean((2, 3))
+#     ori_cols = originals.mean((2, 3))
+#     rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
+#     gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
+#     br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
+#     col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
+#     return col_loss
+
+
+def color_constency_loss3(enhances, originals):
+    rg_ratio = (enhances[:, 0, ...] / enhances[:, 1, ...]
+                - originals[:, 0, ...] / originals[:, 1, ...]) ** 2
+    gb_ratio = (enhances[:, 1, ...] / enhances[:, 2, ...]
+                - originals[:, 1, ...] / originals[:, 2, ...]) ** 2
+    br_ratio = (enhances[:, 2, ...] / enhances[:, 0, ...]
+                - originals[:, 2, ...] / originals[:, 0, ...]) ** 2
     col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
     return col_loss
 
 
 def get_kernels(device):
     # weighted RGB to gray
-    # K1 = torch.tensor([0.3, 0.59, 0.1], dtype=torch.float32).view(1, 3, 1, 1).to(device)
-    K1 = torch.tensor([1 / 3, 1 / 3, 1 / 3], dtype=torch.float32).view(1, 3, 1, 1).to(device)
+    K1 = torch.tensor([0.3, 0.59, 0.1], dtype=torch.float32).view(1, 3, 1, 1).to(device)
+    # K1 = torch.tensor([1 / 3, 1 / 3, 1 / 3], dtype=torch.float32).view(1, 3, 1, 1).to(device)
 
     # kernel for neighbor diff
     K2 = torch.tensor([[[0, -1, 0], [0, 1, 0], [0, 0, 0]],
@@ -215,7 +226,7 @@ def plot_LE(cache):
         axes[i].axis('off')
         axes[i].set_title(f'n={i}')
     axes[0].set_title('Original')
-    axes[-1].set_title(f'n={i+1}, Enhanced')
+    axes[-1].set_title(f'n={i}, Enhanced')
 
     fig.tight_layout()
     return fig

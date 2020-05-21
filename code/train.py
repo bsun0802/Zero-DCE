@@ -75,8 +75,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
         L_spa = w_spa * spatial_consistency_loss(
             enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
         L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
-        # L_col = w_col * color_constency_loss(enhanced_batch)
-        L_col = w_col * color_constency_loss2(enhanced_batch, img_batch)
+        L_col = w_col * color_constency_loss3(enhanced_batch, img_batch)
         L_tvA = w_tvA * alpha_total_variation(Astack)
         loss = L_spa + L_exp + L_col + L_tvA
 
@@ -109,8 +108,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
             L_spa = w_spa * spatial_consistency_loss(
                 enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
             L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
-            # L_col = w_col * color_constency_loss(enhanced_batch)
-            L_col = w_col * color_constency_loss2(enhanced_batch, img_batch)
+            L_col = w_col * color_constency_loss3(enhanced_batch, img_batch)
             L_tvA = w_tvA * alpha_total_variation(Astack)
             loss = L_spa + L_exp + L_col + L_tvA
 

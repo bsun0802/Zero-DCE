@@ -55,26 +55,6 @@ def exposure_control_loss(enhances, rsize=16, E=0.6):
     return exp_loss
 
 
-# color constancy loss described in the paper, but it barely works.
-# def color_constency_loss(enhances):
-#     plane_avg = enhances.mean((2, 3))
-#     col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
-#                           + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
-#                           + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
-#     return col_loss
-
-
-# color constancy via ratio, not difference. It works better.
-# def color_constency_loss2(enhances, originals):
-#     enh_cols = enhances.mean((2, 3))
-#     ori_cols = originals.mean((2, 3))
-#     rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
-#     gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
-#     br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
-#     col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
-#     return col_loss
-
-
 def color_constency_loss3(enhances, originals):
     rg_ratio = (enhances[:, 0, ...] / enhances[:, 1, ...]
                 - originals[:, 0, ...] / originals[:, 1, ...]) ** 2

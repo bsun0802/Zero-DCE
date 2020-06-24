@@ -1,8 +1,6 @@
 import os
-import sys
 import argparse
 
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -38,6 +36,7 @@ else:
 
 checkpoint = torch.load(args.ckpt, map_location=device)
 hp = checkpoint['HyperParam']
+epoch = checkpoint['epoch']
 print(hp)
 model = DCENet(n_LE=hp['n_LE'], std=hp['std'])
 model.load_state_dict(checkpoint['model'])
@@ -50,7 +49,7 @@ test_dataset = SICEPart1(args.testDir, transform=transforms.ToTensor())
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 experiment = os.path.basename(args.ckpt).split('_')[0]
-output_dir = os.path.join('../train-jobs/evaluation', experiment)
+output_dir = os.path.join('../train-jobs/evaluation', experiment, str(epoch))
 os.makedirs(output_dir, exist_ok=True)
 with torch.no_grad():
     for i, sample in enumerate(test_loader):
@@ -64,8 +63,8 @@ with torch.no_grad():
         enhanced = to_numpy(enhanced_batch, squeeze=True)
         Astack = to_numpy(Astack, squeeze=True)
 
-        np.savez_compressed(os.path.join(output_dir, name),
-                            original=img, enhanced=enhanced, Astack=Astack)
+        # np.savez_compressed(os.path.join(output_dir, name),
+        #                     original=img, enhanced=enhanced, Astack=Astack)
 
         fig = plot_LE(cache)
         fig.savefig(os.path.join(output_dir, 'LE_' + name + '.jpg'), dpi=300)

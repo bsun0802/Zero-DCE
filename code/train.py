@@ -1,8 +1,11 @@
 import os
 import sys
 import time
+import shutil
 import argparse
+
 from datetime import datetime
+from subprocess import call
 
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -45,9 +48,9 @@ train_dir = os.path.join(basedir, 'train')
 val_dir = os.path.join(basedir, 'val')
 
 train_dataset = SICEPart1(train_dir, transform=transforms.ToTensor())
-trainloader = DataLoader(train_dataset, batch_size=12, shuffle=True, pin_memory=True)
+trainloader = DataLoader(train_dataset, batch_size=10, shuffle=True, pin_memory=True)
 val_dataset = SICEPart1(val_dir, transform=transforms.ToTensor())
-valloader = DataLoader(val_dataset, batch_size=12, shuffle=False, pin_memory=True)
+valloader = DataLoader(val_dataset, batch_size=4, shuffle=False, pin_memory=True)
 
 loaders = {'train': trainloader, 'val': valloader}
 
@@ -74,7 +77,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
         L_spa = w_spa * spatial_consistency_loss(
             enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
-        L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
+        L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize, E=0.7)
         L_col = w_col * color_constency_loss3(enhanced_batch, img_batch)
         L_tvA = w_tvA * alpha_total_variation(Astack)
         loss = L_spa + L_exp + L_col + L_tvA
@@ -96,6 +99,8 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
         prev = time.time()
 
+    loss_history.append(logger.avg)  # store avg. train losses for this epoch
+
     model = model.eval()
     start = time.time()
     with torch.no_grad():
@@ -107,7 +112,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
             L_spa = w_spa * spatial_consistency_loss(
                 enhanced_batch, img_batch, to_gray, neigh_diff, spa_rsize)
-            L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize)
+            L_exp = w_exp * exposure_control_loss(enhanced_batch, exp_rsize, E=0.7)
             L_col = w_col * color_constency_loss3(enhanced_batch, img_batch)
             L_tvA = w_tvA * alpha_total_variation(Astack)
             loss = L_spa + L_exp + L_col + L_tvA
@@ -124,7 +129,7 @@ def train(loaders, model, optimizer, scheduler, epoch, num_epochs, **kwargs):
 
 
 w_spa, w_exp, w_col, w_tvA = args.weights
-hp = dict(lr=1e-4, wd=0.0, lr_decay_factor=0.98,
+hp = dict(lr=1e-4, wd=1e-5, lr_decay_factor=0.96,
           n_LE=args.n_LE, std=0.04,
           w_spa=w_spa, w_exp=w_exp, w_col=w_col, w_tvA=w_tvA,
           spa_rsize=4, exp_rsize=16)
@@ -156,7 +161,7 @@ for epoch in range(num_epochs):
                      to_gray=to_gray, neigh_diff=neigh_diff,
                      w_spa=hp['w_spa'], w_exp=hp['w_exp'], w_col=hp['w_col'], w_tvA=hp['w_tvA'],
                      spa_rsize=hp['spa_rsize'], exp_rsize=hp['exp_rsize'])
-    loss_history.append(val_loss)
+    # loss_history.append(val_loss)  # total validation loss isn't important
     is_best = val_loss < best_loss
     best_loss = min(val_loss, best_loss)
 
@@ -171,4 +176,19 @@ for epoch in range(num_epochs):
         'train_src': open('./train.py', 'rt').read()
     }, is_best, experiment, epoch, ckpt_dir)
 
+    # Evaluation per 30 epoch
+    if (epoch + 1) % 30 == 0:
+        CMD = ['python', 'eval.py', '--device=0', '--testDir=../data/test-1200-900',
+               f'--ckpt=../train-jobs/ckpt/{args.experiment}_ckpt.pth']
+        call(CMD)
+
+
 logfile.close()
+
+np.save(
+    os.path.join('../train-jobs/evaluation', experiment, 'loss_hist.npy'),
+    np.array(loss_history)
+)
+
+shutil.make_archive(f'../train-jobs/evaluation/{args.experiment}',
+                    'zip', f'../train-jobs/evaluation/{args.experiment}')

@@ -55,14 +55,45 @@ def exposure_control_loss(enhances, rsize=16, E=0.6):
     return exp_loss
 
 
+# color constancy loss described in the paper, but it barely works.
+# def color_constency_loss(enhances):
+#     plane_avg = enhances.mean((2, 3))
+#     col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
+#                           + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
+#                           + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
+#     return col_loss
+
+
+# color constancy via ratio, not difference. It works better.
+# def color_constency_loss2(enhances, originals):
+#     enh_cols = enhances.mean((2, 3))
+#     ori_cols = originals.mean((2, 3))
+#     rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
+#     gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
+#     br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
+#     col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
+#     return col_loss
+
+
+# pixel-wise color preserving loss. This works best for my test
 def color_constency_loss3(enhances, originals):
-    rg_ratio = (enhances[:, 0, ...] / enhances[:, 1, ...]
-                - originals[:, 0, ...] / originals[:, 1, ...]) ** 2
-    gb_ratio = (enhances[:, 1, ...] / enhances[:, 2, ...]
-                - originals[:, 1, ...] / originals[:, 2, ...]) ** 2
-    br_ratio = (enhances[:, 2, ...] / enhances[:, 0, ...]
-                - originals[:, 2, ...] / originals[:, 0, ...]) ** 2
-    col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
+    def solver(c1, c2, d1, d2):
+        pos = (c1 > 0) & (c2 > 0) & (d1 > 0) & (d2 > 0)
+        return torch.mean((c1[pos] / c2[pos] - d1[pos] / d2[pos]) ** 2)
+
+    enh_avg = F.avg_pool2d(enhances, 4)
+    ori_avg = F.avg_pool2d(originals, 4)
+
+    rg_loss = solver(enh_avg[:, 0, ...], enh_avg[:, 1, ...],
+                     ori_avg[:, 0, ...], ori_avg[:, 1, ...])
+    gb_loss = solver(enh_avg[:, 1, ...], enh_avg[:, 2, ...],
+                     ori_avg[:, 1, ...], ori_avg[:, 2, ...])
+    br_loss = solver(enh_avg[:, 2, ...], enh_avg[:, 0, ...],
+                     ori_avg[:, 2, ...], ori_avg[:, 0, ...])
+
+    col_loss = rg_loss + gb_loss + br_loss
+    if torch.any(torch.isnan(col_loss)).item():
+        sys.exit('Color Constancy loss is nan')
     return col_loss
 
 
@@ -173,7 +204,7 @@ def plot_result(img, enhanced, Astack, n_LE, scaler=None):
     if scaler and Ab.min() < 0:
         Ab = scaler(Ab)
 
-    fig, axes = plt.subplots(1, 5, figsize=(10, 2))
+    fig, axes = plt.subplots(1, 5, figsize=(12.5, 2.5))
     fig.subplots_adjust(wspace=0.1)
 
     axes[0].imshow(img)
@@ -200,7 +231,7 @@ def plot_result(img, enhanced, Astack, n_LE, scaler=None):
 
 def plot_LE(cache):
     n = len(cache)
-    fig, axes = plt.subplots(1, n, figsize=(10, 2))
+    fig, axes = plt.subplots(1, n, figsize=(12.5, 2.5))
     for i, img in enumerate(cache):
         axes[i].imshow(img)
         axes[i].axis('off')
@@ -238,6 +269,8 @@ def putText(im, *args):
 
 
 def row_arrange(inp, fixed, adaptive, algo):
+    if algo.shape != fixed.shape:
+        algo = cv2.resize(algo, (fixed.shape[1], fixed.shape[0]))
     pos = (25, 50)
     font = cv2.FONT_HERSHEY_SIMPLEX
     color = (118 / 255., 117 / 255., 0.)

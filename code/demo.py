@@ -39,6 +39,7 @@ else:
     torch.manual_seed(1234)
 
 outPath = create_dir(args.output_dir)
+out_prefix = Path(args.ckpt).stem.split('_')[0]
 
 checkpoint = torch.load(args.ckpt, map_location=device)
 hp = checkpoint['HyperParam']
@@ -69,14 +70,15 @@ with torch.no_grad():
         adaptive_gamma = gamma_like(img, enhanced)
 
         row = row_arrange(img, fixed_gamma, adaptive_gamma, enhanced)
-        Image.fromarray((row*255).astype(np.uint8), mode='RGB').save(outPath.joinpath(f'{name}.png'))
+        to_be_saved = Image.fromarray((row * 255).astype(np.uint8), mode='RGB')
+        to_be_saved.save(outPath.joinpath(f'{out_prefix}_{name}.png'))
         h, _, _ = row.shape
         grid[curr_h:curr_h + h, :, :] = row
 
         curr_h += (h + vsep)
 
 grid_image = Image.fromarray((grid * 255).astype(np.uint8), mode='RGB')
-grid_image.save(outPath.joinpath('ZeroDCE_demo_output.pdf'))
+grid_image.save(outPath.joinpath(f'{out_prefix}_cmp.pdf'))
 
 # <-- Old Snippet, ident 2 times to the right -->
 # fig, axes = plt.subplots(1, 2)

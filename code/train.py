@@ -23,9 +23,12 @@ def parse_args():
                         help='prefix of outputs, e.g., experiment_best_model.pth will be saved to ckpt/')
     parser.add_argument('--baseDir', type=str, required=True,
                         help='baseDir/train, baseDir/val will be used')
+    parser.add_argument('--testDir', type=str, required=True, help='path to test images')
     parser.add_argument('--n_LE', type=int, required=True, help='number of LE iteration')
     parser.add_argument('--weights', type=float, nargs='+', required=True,
-                        help='A list of weights for [w_spa, w_exp, w_col, w_tvA]')
+                        help=('A list of weights for [w_spa, w_exp, w_col, w_tvA]. '
+                              'That is, spatial loss, exposure loss, color constancy, '
+                              'and total variation respectively'))
 
     parser.add_argument('--numEpoch', type=int, default=120)
     args = parser.parse_args()
@@ -178,7 +181,7 @@ for epoch in range(num_epochs):
 
     # Evaluation per 30 epoch
     if (epoch + 1) % 30 == 0:
-        CMD = ['python', 'eval.py', '--device=0', '--testDir=../data/test-1200-900',
+        CMD = ['python', 'eval.py', '--device=0', f'--testDir={args.testDir}',
                f'--ckpt=../train-jobs/ckpt/{args.experiment}_ckpt.pth']
         call(CMD)
 

@@ -2,15 +2,7 @@
 
 Link to the paper: [Zero-Reference Deep Curve Estimation for Low-Light Image Enhancement](https://arxiv.org/abs/2001.06826)
 
-<<<<<<< HEAD
 I do have some observations and implementation details that differ from the paper, can be found in [Implementation Details](#implementation-details).
-=======
-<<<<<<< HEAD
-I do have some observations and implementation details that differ from the paper, can be found in [Implementation Details](#implementation-details).
-=======
-I do have some observations and implementation details that differ from the paper, can be found in [Implementation Details](#implementation-details)
->>>>>>> 94cf70c34dc97dc6549cf4299b1cb655037780ae
->>>>>>> 12e5d7c8db6ebf242476c063b4a21773777ee7d0
 
 
 
@@ -140,25 +132,11 @@ Here are my implementation details that differ from the paper
 
 1. Since the model is small and computation is not a problem, I divised _per-pixel_ color constancy loss to substitute the color constancy loss as described in the paper, which demands the _average_ color does not shift too much. Implementations can be found in `code/utils.py`.
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 12e5d7c8db6ebf242476c063b4a21773777ee7d0
 2. The paper claim the parameter E in exposure loss, being in range [0.4, 0.7] does not cast a significant difference on the model. **However, per my test E=0.7 works for this [SICE dataset](#dataset), all other E alwalys result in sub-optimal resutls.** For example when E < 0.6, instead of **increasing** the darken pixel values, the model will **decrease** the pixels values which is more saturated (like white colored area and too bright area), resulting severe artifect in white objects and the border between dark and bright obejcts. 
 
 3. My multiplier for Spatial Constancy Loss,  Exposure Loss, Color Constancy Loss, and Total Variation Loss are 8, 4, 2.2, 2 respectively, this differ from the paper because the loss function implementation can be the same but off by a constant. For example, taking sum or taking mean, the loss are systematically the same but the magnitude are different,
 
 4. Actually, I do find the number of light enhancement iterations do not matter too much. The results of LE=4, 5, 6, 7, 8 **looks** equivalently well to me (no quantitative comparison being made). 
-<<<<<<< HEAD
-=======
-=======
-2. The paper claim the parameter E in exposure loss, being in range [0.4, 0.7] does not post significant difference on the model. **However, per my test E=0.7 works for this [SICE dataset](#dataset), all other E alwalys result in sub-optimal resutls.** For example when E < 0.6, instead of **increasing** the darken pixel values, the model will **decrease** the pixels values which is more saturated (like white colored area and too bright area), resulting severe artifect in white objects and the border between dark and bright obejcts. 
-
-3. My multiplier for Spatial Constancy Loss,  Exposure Loss, Color Constancy Loss, and Total Variation Loss are 8 4 2.2 2 respectively, this differ from the paper because the loss function implementation can be the same but off by a constant(for example, taking sum or taking mean, the loss are systematically the same but the magnitude are different), 
-
-4. Actually, I do find the number of light enhancement iterations do not matter too much. The results of LE=4, 5, 6, 7, 8 **looks** equivalent well to me (no quantitative comparison being made). 
->>>>>>> 94cf70c34dc97dc6549cf4299b1cb655037780ae
->>>>>>> 12e5d7c8db6ebf242476c063b4a21773777ee7d0
 
    
 

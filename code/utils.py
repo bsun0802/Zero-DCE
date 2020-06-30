@@ -273,12 +273,12 @@ def row_arrange(inp, fixed, adaptive, algo):
         algo = cv2.resize(algo, (fixed.shape[1], fixed.shape[0]))
     pos = (25, 50)
     font = cv2.FONT_HERSHEY_SIMPLEX
-    color = (118 / 255., 117 / 255., 0.)
+    color = (128 / 255., 117 / 255., 0.)
 
-    inp = putText(inp, 'Input', pos, font, 1.5, color, 2)
-    fixed = putText(fixed, 'Gamma(fixed=0.4)', pos, font, 1.5, color, 2)
-    adaptive = putText(adaptive, 'Gamma(adaptive)', pos, font, 1.5, color, 2)
-    algo = putText(algo, 'ZeroDCE', pos, font, 1.5, color, 2)
+    inp = putText(inp, 'Input', pos, font, 2, color, 3)
+    fixed = putText(fixed, 'Gamma(fixed=0.4)', pos, font, 2, color, 3)
+    adaptive = putText(adaptive, 'Gamma(adaptive)', pos, font, 2, color, 3)
+    algo = putText(algo, 'ZeroDCE', pos, font, 2, color, 3)
 
     return cv2.hconcat([inp, fixed, adaptive, algo])
 

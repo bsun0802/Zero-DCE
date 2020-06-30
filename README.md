@@ -53,7 +53,7 @@ This will process the images in `../data/part1-512/test-toy ` and save results t
 
 Please refer to `5LE-300_cmp.pdf` in `demo-output/` for comparison of ZeroDCE and traditional gamma corrections. The demo shown in the `pdf` here is with light enhancement LE=5, and training 300 epoches. 
 
-120~180 epochs are enough and give better results. Results saved per 30 epochs can be found in individual folder under  `demo-output/` as well. 
+120~180 epochs are enough and give better results. Results saved per 30 epochs can be found in individual folder under  `train-jobs/evaluation`. 
 
 
 

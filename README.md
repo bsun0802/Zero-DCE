@@ -53,7 +53,7 @@ This will process the images in `../data/part1-512/test-toy ` and save results t
 
 Please refer to `5LE-300_cmp.pdf` in `demo-output/` for comparison of ZeroDCE and traditional gamma corrections. The demo shown in the `pdf` here is with light enhancement LE=5, and training 300 epoches. 
 
-120~180 epochs are enough and give better results. Results saved per 30 epochs can be found in individual folder under  `train-jobs/evaluation`. 
+Results saved per 30 epochs can be downloaded [here](https://drive.google.com/file/d/1UiVgtU-GVubk1GhsrmvHBSuIz2JCrljr/view?usp=sharing)
 
 
 
@@ -130,7 +130,7 @@ You need to follow this directory structure as I use **relative** paths. Upon ro
 
 Here are my implementation details that differ from the paper
 
-1. Since the model is small and computation is not a problem, I divised _per-pixel_ color constancy loss to substitute the color constancy loss as described in the paper, which demands the _average_ color does not shift too much. Implementations can be found in `code/utils.py`.
+1. Since the model is small and computation is not a problem, I divised _per-pixel_ color constancy loss to substitute the color constancy loss as described in the paper, which only requires the _average_ color does not shift too much. Implementations can be found in `code/utils.py`.
 
 2. The paper claim the parameter E in exposure loss, being in range [0.4, 0.7] does not cast a significant difference on the model. **However, per my test E=0.7 works for this [SICE dataset](#dataset), all other E alwalys result in sub-optimal resutls.** For example when E < 0.6, instead of **increasing** the darken pixel values, the model will **decrease** the pixels values which is more saturated (like white colored area and too bright area), resulting severe artifect in white objects and the border between dark and bright obejcts. 
 

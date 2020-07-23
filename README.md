@@ -50,7 +50,7 @@ This will process the images in `../example-test-images/ ` and save results to  
 
 Please refer to `comparison.pdf` in `demo-output/` for comparison of ZeroDCE and traditional gamma corrections. It shows result of  `train-jobs/ckpt/8LE-color-loss2_best_model.pth` which is the best model when trainied with 160 epochs. 
 
-`Results saved per 40 epochs can be downloaded [here](https://drive.google.com/file/d/1_kdHtW1DqhAHCTR5XkTavmDPgmuk3sOI/view?usp=sharing).
+Results saved per 40 epochs can be downloaded [here](https://drive.google.com/file/d/1_kdHtW1DqhAHCTR5XkTavmDPgmuk3sOI/view?usp=sharing).
 
 Generally, I think ~100 epochs should be good. 
 
@@ -118,7 +118,8 @@ You need to follow this directory structure as I use **relative** paths. Upon ro
 
 *  a `code/` directory and put python files in it
 * a `data/` directory and put subdirectory and data in it, considering modify `dataset.py` to your needs
-* empty directories `train-jobs/log`,  `train-jobs/ckpt`, `train-jobs/evaluation` as log/checkpoing/results will be saved to them
+* directories `train-jobs/log`,  `train-jobs/ckpt`, `train-jobs/evaluation` as log/checkpoing/results will be saved to them
+* 
 
 ![image-20200503001251677](docs/file-structure.png)
 

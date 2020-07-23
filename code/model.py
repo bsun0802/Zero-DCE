@@ -1,38 +1,31 @@
 import torch
 import torch.nn as nn
-# import torch.nn.functional as F
-
-
-def conv3x3(inplane, outplane, stride=1, groups=1, dilation=1):
-    return nn.Conv2d(inplane, outplane, kernel_size=3, stride=stride, bias=False,
-                     groups=groups, padding=dilation, dilation=dilation)
 
 
 class DCENet(nn.Module):
     '''https://li-chongyi.github.io/Proj_Zero-DCE.html'''
 
-    def __init__(self, n_LE=8, std=0.02):
+    def __init__(self, n=8, return_results=[4, 6, 8]):
+        '''
+        Args
+        --------
+          n: number of iterations of LE(x) = LE(x) + alpha * LE(x) * (1-LE(x)).
+          return_results: [4, 8] => return the 4-th and 8-th iteration results.
+        '''
         super().__init__()
-        self.n_LE = n_LE  # number of iterations of enhancement
-        self.std = std
+        self.n = n
+        self.ret = return_results
 
-        self.conv1 = conv3x3(3, 32)
-        self.conv2 = conv3x3(32, 32)
-        self.conv3 = conv3x3(32, 32)
-        self.conv4 = conv3x3(32, 32)
-        self.conv5 = conv3x3(64, 32)
-        self.conv6 = conv3x3(64, 32)
-        self.conv7 = conv3x3(64, 3 * n_LE)
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1, bias=True)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=True)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=True)
+        self.conv4 = nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=True)
+        self.conv5 = nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True)
+        self.conv6 = nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True)
+        self.conv7 = nn.Conv2d(64, 3 * n, kernel_size=3, padding=1, bias=True)
 
         self.relu = nn.ReLU(inplace=True)
         self.tanh = nn.Tanh()
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=std)
-                # nn.init.kaiming_normal_(m.weight)
-                if m.bias is not None:
-                    m.bias.data.zero_()
 
     def forward(self, x):
         out1 = self.relu(self.conv1(x))
@@ -44,6 +37,15 @@ class DCENet(nn.Module):
         out5 = self.relu(self.conv5(torch.cat((out4, out3), 1)))
         out6 = self.relu(self.conv6(torch.cat((out5, out2), 1)))
 
-        out = self.tanh(self.conv7(torch.cat((out6, out1), 1)))
+        alpha_stacked = self.tanh(self.conv7(torch.cat((out6, out1), 1)))
 
-        return out
+        alphas = torch.split(alpha_stacked, 3, 1)
+        results = [x]
+        for i in range(self.n):
+            # x = x + alphas[i] * (x - x**2)  # as described in the paper
+            # sign doesn't really matter becaus of symmetry.
+            x = x + alphas[i] * (torch.pow(x, 2) - x)
+            if i + 1 in self.ret:
+                results.append(x)
+
+        return results, alpha_stacked

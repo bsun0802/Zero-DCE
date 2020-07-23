@@ -11,7 +11,7 @@ def train_val_split(part1_rootdir, dst_dir, splitAt=2421, resized=(512, 512)):
     '''resize the image to 512x512 and put it them in one folder'''
     JPGs = glob.iglob(part1_rootdir + '**/*.JPG', recursive=True)
     JPGs = [jpg for jpg in JPGs if 'Label' not in jpg]
-    assert len(JPGs) == 3021
+    # assert len(JPGs) == 3021
     random.shuffle(JPGs)
 
     for jpg in JPGs[:splitAt]:

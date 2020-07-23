@@ -1,12 +1,13 @@
 import os
 import argparse
 
-import numpy as np
+# import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
 import torch.nn
-import torch.nn.functional as F
+# import torch.nn.functional as F
+import torchvision
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
@@ -38,7 +39,7 @@ checkpoint = torch.load(args.ckpt, map_location=device)
 hp = checkpoint['HyperParam']
 epoch = checkpoint['epoch']
 print(hp)
-model = DCENet(n_LE=hp['n_LE'], std=hp['std'])
+model = DCENet(n=8, return_results=[4, 6, 8])
 model.load_state_dict(checkpoint['model'])
 model.to(device)
 model.eval()
@@ -56,24 +57,22 @@ with torch.no_grad():
         name = sample['name'][0][:-4]
         img_batch = sample['img'].to(device)
 
-        Astack = model(img_batch)
-        enhanced_batch, cache = refine_image(img_batch, Astack, eval=True)
+        results, alpha_stacked = model(img_batch)
+        # !! NOTE, for this demo pre-trained model, we train with number of iteration n=8
+        # !! but take the 4-th iterations as result
+        enhanced_batch = results[1]
 
         img = to_numpy(img_batch, squeeze=True)
         enhanced = to_numpy(enhanced_batch, squeeze=True)
-        Astack = to_numpy(Astack, squeeze=True)
+        alpha_stacked = to_numpy(alpha_stacked, squeeze=True)
 
-        # np.savez_compressed(os.path.join(output_dir, name),
-        #                     original=img, enhanced=enhanced, Astack=Astack)
+        fp = os.path.join(output_dir, 'LE_' + name + '.jpg')
+        torchvision.utils.save_image(torch.cat(results, 0), fp)
 
-        fig = plot_LE(cache)
-        fig.savefig(os.path.join(output_dir, 'LE_' + name + '.jpg'), dpi=300)
+        fig = plot_result(img, enhanced, alpha_stacked, n_LE='4', scaler=None)
+        fig.savefig(os.path.join(output_dir, 'res_4_outof_8' + name + '.jpg'), dpi=300)
         plt.close(fig)
 
-        fig = plot_result(img, enhanced, Astack, hp['n_LE'], scaler=None)
-        fig.savefig(os.path.join(output_dir, 'res_' + name + '.jpg'), dpi=300)
-        plt.close(fig)
-
-        fig = plot_alpha_hist(Astack)
+        fig = plot_alpha_hist(alpha_stacked)
         fig.savefig(os.path.join(output_dir, 'A_' + name + '.jpg'), dpi=150)
         plt.close(fig)

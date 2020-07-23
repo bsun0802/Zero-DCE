@@ -13,27 +13,6 @@ import torch
 import torch.nn.functional as F
 
 
-# 1. helper functions for Zero-DCE
-def light_enhancement(x, alpha):
-    '''element-wise gamma correction production'''
-    return x + alpha * x * (1 - x)
-
-
-def refine_image(img, Astack, eval=False, num_enh=999):
-    An = torch.split(Astack, 3, 1)
-    num_enh = min(num_enh, len(An))
-    if not eval:
-        for A in An[:num_enh]:
-            img = light_enhancement(img, A)
-        return img
-    else:
-        cache = [to_numpy(img, squeeze=True)]
-        for A in An[:num_enh]:
-            img = light_enhancement(img, A)
-            cache.append(to_numpy(img, squeeze=True))
-        return img, cache
-
-
 def alpha_total_variation(A):
     '''
     Links: https://remi.flamary.com/demos/proxtv.html
@@ -55,28 +34,28 @@ def exposure_control_loss(enhances, rsize=16, E=0.6):
     return exp_loss
 
 
-# color constancy loss described in the paper, but it barely works.
-# def color_constency_loss(enhances):
-#     plane_avg = enhances.mean((2, 3))
-#     col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
-#                           + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
-#                           + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
-#     return col_loss
+# Color constancy loss via gray-world assumption.   In use.
+def color_constency_loss(enhances):
+    plane_avg = enhances.mean((2, 3))
+    col_loss = torch.mean((plane_avg[:, 0] - plane_avg[:, 1]) ** 2
+                          + (plane_avg[:, 1] - plane_avg[:, 2]) ** 2
+                          + (plane_avg[:, 2] - plane_avg[:, 0]) ** 2)
+    return col_loss
 
 
-# color constancy via ratio, not difference. It works better.
-# def color_constency_loss2(enhances, originals):
-#     enh_cols = enhances.mean((2, 3))
-#     ori_cols = originals.mean((2, 3))
-#     rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
-#     gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
-#     br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
-#     col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
-#     return col_loss
+# Averaged color component ratio preserving loss.  Not in use.
+def color_constency_loss2(enhances, originals):
+    enh_cols = enhances.mean((2, 3))
+    ori_cols = originals.mean((2, 3))
+    rg_ratio = (enh_cols[:, 0] / enh_cols[:, 1] - ori_cols[:, 0] / ori_cols[:, 1]).abs()
+    gb_ratio = (enh_cols[:, 1] / enh_cols[:, 2] - ori_cols[:, 1] / ori_cols[:, 2]).abs()
+    br_ratio = (enh_cols[:, 2] / enh_cols[:, 0] - ori_cols[:, 2] / ori_cols[:, 0]).abs()
+    col_loss = (rg_ratio + gb_ratio + br_ratio).mean()
+    return col_loss
 
 
-# pixel-wise color preserving loss. This works best for my test
-def color_constency_loss3(enhances, originals):
+# pixel-wise color component ratio preserving loss. Not in use.
+def anti_color_shift_loss(enhances, originals):
     def solver(c1, c2, d1, d2):
         pos = (c1 > 0) & (c2 > 0) & (d1 > 0) & (d2 > 0)
         return torch.mean((c1[pos] / c2[pos] - d1[pos] / d2[pos]) ** 2)
@@ -91,10 +70,10 @@ def color_constency_loss3(enhances, originals):
     br_loss = solver(enh_avg[:, 2, ...], enh_avg[:, 0, ...],
                      ori_avg[:, 2, ...], ori_avg[:, 0, ...])
 
-    col_loss = rg_loss + gb_loss + br_loss
-    if torch.any(torch.isnan(col_loss)).item():
+    anti_shift_loss = rg_loss + gb_loss + br_loss
+    if torch.any(torch.isnan(anti_shift_loss)).item():
         sys.exit('Color Constancy loss is nan')
-    return col_loss
+    return anti_shift_loss
 
 
 def get_kernels(device):
@@ -130,23 +109,10 @@ def spatial_consistency_loss(enhances, originals, to_gray, neigh_diff, rsize=4):
     return spa_loss
 
 
-# 2.model helpers
-def group_params(model):
-    decay, no_decay = [], []
-    for name, par in model.named_parameters():
-        if 'bias' in name:
-            no_decay.append(par)
-        else:
-            decay.append(par)
-
-    groups = [dict(params=decay), dict(params=no_decay, weight_decay=0.)]
-    return groups
-
-
-# 3. training helpers
+# training helper functions
 class Logger:
     TRAIN_INFO = '[TRAIN] - EPOCH {:d}/{:d}, Iters {:d}/{:d}, {:.1f} s/iter, \
-LOSS / LOSS(AVG): {:.4f}/{:.4f}, Components / Comp. Avg.: {} / {}'.strip()
+LOSS / LOSS(AVG): {:.4f}/{:.4f}, Loss[spa,exp,col,tvA] / Loss(avg)  : {} / {}'.strip()
 
     VAL_INFO = '[Validation] - EPOCH {:d}/{:d} - Validation Avg. LOSS: {:.4f}, in {:.2f} secs  '
     VAL_INFO += '- ' + datetime.now().strftime('%X') + ' -'
@@ -224,20 +190,6 @@ def plot_result(img, enhanced, Astack, n_LE, scaler=None):
     for i in range(5):
         axes[i].set_title(titles[i])
         axes[i].axis('off')
-
-    fig.tight_layout()
-    return fig
-
-
-def plot_LE(cache):
-    n = len(cache)
-    fig, axes = plt.subplots(1, n, figsize=(12.5, 2.5))
-    for i, img in enumerate(cache):
-        axes[i].imshow(img)
-        axes[i].axis('off')
-        axes[i].set_title(f'n={i}')
-    axes[0].set_title('Original')
-    axes[-1].set_title(f'n={i}, Enhanced')
 
     fig.tight_layout()
     return fig

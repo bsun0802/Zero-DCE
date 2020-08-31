@@ -8,6 +8,12 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 
 
+#### This algorithm has potential for video enhancement. Here is a demo of ZeroDCE itself, without any video stability add-ons. 
+
+![](/Users/bsun/repos/Zero-DCE/docs/combined_2x.gif)
+
+
+
 ## Inference with pre-trained model
 
 I provide a pytorch model checkpoint that I trained, to use it:
@@ -133,12 +139,15 @@ You need to follow this directory structure as I use **relative** paths. Upon ro
 Here are some of my thoughts during implementation of this non-reference image enhancement work,
 
 1. The paper claim the parameter E in exposure loss, being in range [0.4, 0.7] does not cast a significant difference on the model. **However, per my test E=0.6 works for this [SICE dataset](#dataset), all other E alwalys result in sub-optimal resutls.** For example when E < 0.6, instead of **increasing** the darken pixel values, the model will **decrease** the pixels values that are  more saturated (like white colored area and too bright area), resulting severe artifect in whitish objects and the border between dark and bright obejcts. 
+2. My multiplier for Spatial Constancy Loss,  Exposure Loss, Color Constancy Loss, and Total Variation Loss are 8, 1.75, 1, 8 respectively, this differ from the paper because the loss function implementation can be the same but off by a constant. For example, taking sum or taking mean, the loss are systematically the same but the magnitude are different,
 
-3. My multiplier for Spatial Constancy Loss,  Exposure Loss, Color Constancy Loss, and Total Variation Loss are 8, 1.75, 1, 8 respectively, this differ from the paper because the loss function implementation can be the same but off by a constant. For example, taking sum or taking mean, the loss are systematically the same but the magnitude are different,
 
-4. Oddly, I do train the network with number of light enhancement iterations n=8 as described in the paper, but the best results are coming from the 4-th iterations in the middle. You will find my comments about this in more details in the source code.
 
-   
+## Optimization of Original ZeroDCE
+
+I devised a new version of ZeroDCE, which can achieve the same if not better results with 4-times of enhancement. The source code for this is under business license, if you want to know more about details. Shoot me an email bos AT usc DOT edu with subject ZeroDCE.
+
+
 
 ## License
 

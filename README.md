@@ -14,7 +14,7 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 <img src="https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif" alt="https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif" style="zoom:200%;" />
 
-
+If the video can not be displayed break, see it [here](https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif).
 
 ## Inference with pre-trained model
 

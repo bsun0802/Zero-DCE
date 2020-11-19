@@ -10,7 +10,7 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 #### This algorithm has potential for video enhancement. Here is a demo of ZeroDCE itself, without any video stability add-ons. 
 
-![](/Users/bsun/repos/Zero-DCE/docs/combined_2x.gif)
+<video src="/Users/bsun/repos/Zero-DCE/docs/video-example.mp4"></video>
 
 
 

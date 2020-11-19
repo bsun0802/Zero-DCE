@@ -10,7 +10,7 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 #### This algorithm has potential for video enhancement. Here is a demo of ZeroDCE itself, without any video stability add-ons. 
 
-![video-example](https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif)
+<iframe src="https://giphy.com/embed/KkagL7vPeJ422010Z1" width="1080" height="600" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/KkagL7vPeJ422010Z1">via GIPHY</a></p>
 
 
 

@@ -8,7 +8,7 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 
 
-#### This algorithm has potential for video enhancement. Here is a demo of ZeroDCE itself, without any video stability add-ons. 
+#### This algorithm has potential for video enhancement. Here is a demo for applying vanilla ZeroDCE on a video clip without any improvements.
 
 
 

@@ -8,13 +8,13 @@ Some of my thoughts and observations during my implementatino journey of this no
 
 
 
-#### This algorithm has potential for video enhancement. Here is a demo for applying vanilla ZeroDCE on a video clip without any improvements.
-
-
+This algorithm has potential for video enhancement. Here is a demo for applying vanilla ZeroDCE on a video clip without any improvements.
 
 <img src="https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif" alt="https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif" style="zoom:200%;" />
 
-If the video can not be displayed, see it [here](https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif).
+#### **If the video can not be displayed, see it [here](https://media.giphy.com/media/KkagL7vPeJ422010Z1/giphy.gif).**
+
+
 
 ## Inference with pre-trained model
 
